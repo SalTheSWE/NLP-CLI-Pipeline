@@ -1,5 +1,10 @@
 import click
-
+from commands.ir import ir_query_command,ir_setup_command
+from commands.eda import distribution_command,histogram_command,remove_outliers_command,wordcloud_command
+from commands.generate import generate_command
+from commands.preprocessing import remove_command,stem_command,stopwords_command,replace_command,all_command,lemmatize_command
+from commands.embedding import tfidfcommand,model2vec_command,bert_command,sentence_transformer_command,word2vec_command,fasttext_command
+from commands.training import train_command,pipeline_command
 @click.group()
 def cli():
     pass
@@ -34,6 +39,7 @@ python main.py eda distribution --dataset "MARBERT/XNLI" --split "ar" --label_co
 @click.option("--plot_type", type=click.Choice(["pie", "bar"]), default="pie", show_default=True,
               help="Plot type for distribution.")
 def distribution(csv_path, label_col, language, dataset, split, plot_type):
+    distribution_command(csv_path, label_col, language, dataset, split, plot_type)
     pass
 
 @eda.command(epilog= """Example usage:
@@ -51,6 +57,7 @@ python main.py eda histogram --csv_path data.csv --text_col description --unit c
 @click.option("--unit", type=click.Choice(["words", "chars"]), required=True,
               help='Histogram unit: "words" or "chars".')
 def histogram(csv_path, text_col, unit):
+    histogram_command(csv_path, text_col, unit)
     pass
 
 
@@ -79,6 +86,7 @@ python main.py preprocess remove --csv_path data.csv --text_col description --re
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output CSV path.")
 def remove(csv_path, text_col, remove, output):
+    remove_command(csv_path, text_col, remove, output)
     pass
 
 @preprocess.command(epilog= """Example usage:
@@ -103,6 +111,7 @@ python main.py preprocess stopwords --csv_path data.csv --text_col description -
 @click.option("--language", type=click.Choice(["ar", "en", "fr", "auto", "both"]), required=True,
               help="Stopwords language selection.")
 def stopwords(csv_path, text_col, output, language):
+    stopwords_command(csv_path, text_col, output, language)
     pass
 
 @preprocess.command(epilog= """Example usage:
@@ -117,6 +126,7 @@ python main.py preprocess replace --csv_path no_stops.csv --text_col description
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output CSV path.")
 def replace(csv_path, text_col, output):
+    replace_command(csv_path, text_col, output)
     pass
 
 @preprocess.command(epilog= """Example usage:
@@ -137,7 +147,7 @@ python main.py preprocess all --csv_path data.csv --text_col description --langu
               help="Output CSV path.")
 @click.pass_context
 def all(ctx, csv_path, text_col, language, output):
-    replace(remove(stopwords))# something like that 
+    all_command(ctx, csv_path, text_col, language, output)
     pass
 
 
@@ -158,6 +168,7 @@ python main.py embed tfidf --csv_path cleaned.csv --text_col description --max_f
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output pickle path.")
 def tfidf(csv_path, text_col, max_features, output):
+    tfidfcommand(csv_path, text_col, max_features, output)
     pass
 
 @embed.command(epilog= """Example usage:
@@ -172,6 +183,7 @@ python main.py embed model2vec --csv_path cleaned.csv --text_col description --o
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output pickle path.")
 def model2vec(csv_path, text_col, output):
+    model2vec_command(csv_path, text_col, output)
     pass
 
 @embed.command(epilog= """Example usage:
@@ -187,6 +199,7 @@ python main.py embed bert --csv_path cleaned.csv --text_col description --model 
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output pickle path.")
 def bert(csv_path, text_col, model, output):
+    bert_command(csv_path, text_col, model, output)
     pass
 
 @embed.command(epilog= """Example usage:
@@ -202,6 +215,7 @@ python main.py embed sentence-transformer --csv_path cleaned.csv --text_col desc
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output pickle path.")
 def sentence_transformer(csv_path, text_col, model, output):
+    sentence_transformer_command(csv_path, text_col, model, output)
     pass
 
 
@@ -240,6 +254,7 @@ python main.py train --dataset "ARBML/ArabiCorpus" --text_col text --output_col 
 @click.option("--text_col", type=str, required=False,
               help="Text column name when using --dataset.")
 def train(csv_path, input_col, output_col, test_size, dataset, models, save_model, text_col):
+    train_command(csv_path, input_col, output_col, test_size, dataset, models, save_model, text_col)
     pass
 
 #bonus-section-bonus-section-bonus-section-bonus-section-bonus-section-bonus-section
@@ -262,6 +277,7 @@ python main.py generate --model local --count 100 --output synthetic.csv
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output CSV path.")
 def generate(model, class_name, count, output):
+    generate_command(model, class_name, count, output)
     pass
 
 
@@ -279,6 +295,7 @@ python main.py eda remove-outliers --csv_path data.csv --text_col description --
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output CSV path.")
 def remove_outliers(csv_path, text_col, method, output):
+    remove_outliers_command(csv_path, text_col, method, output)
     pass
 
 
@@ -311,6 +328,7 @@ python main.py pipeline --csv_path data.csv --text_col description --label_col c
 @click.option("--save_model", is_flag=True, default=False, help="Save trained model(s).")
 @click.option("--save_report", is_flag=True, default=False, help="Save evaluation report.")
 def pipeline(csv_path, text_col, label_col, preprocessing, embedding, training, output, save_model, save_report):
+    pipeline_command(csv_path, text_col, label_col, preprocessing, embedding, training, output, save_model, save_report)
     pass
 
 
@@ -326,6 +344,7 @@ python main.py embed word2vec --csv_path cleaned.csv --text_col description --ou
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output pickle path.")
 def word2vec(csv_path, text_col, output):
+    word2vec_command(csv_path, text_col, output)
     pass
 
 @embed.command(epilog= """Example usage:
@@ -340,6 +359,7 @@ python main.py embed fasttext --csv_path cleaned.csv --text_col description --ou
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output pickle path.")
 def fasttext(csv_path, text_col, output):
+    fasttext_command(csv_path, text_col, output)
     pass
 
 @preprocess.command(epilog= """Example usage:
@@ -358,6 +378,7 @@ python main.py preprocess stem --csv_path cleaned.csv --text_col description --l
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output CSV path.")
 def stem(csv_path, text_col, language, stemmer, output):
+    stem_command(csv_path, text_col, language, stemmer, output)
     pass
 
 @preprocess.command(epilog= """Example usage:
@@ -374,6 +395,7 @@ python main.py preprocess lemmatize --csv_path cleaned.csv --text_col descriptio
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output CSV path.")
 def lemmatize(csv_path, text_col, language, output):
+    lemmatize_command(csv_path, text_col, language, output)
     pass
 
 @eda.command(epilog= """Example usage:
@@ -393,6 +415,7 @@ python main.py eda wordcloud --csv_path cleaned.csv --text_col description --out
 @click.option("--output", type=click.Path(), required=True,
               help="Output path (directory for per-class, or file for combined).")
 def wordcloud(csv_path, text_col, label_col, output):
+    wordcloud_command(csv_path, text_col, label_col, output)
     pass
 
 @cli.command(epilog= """Example usage:
@@ -409,6 +432,7 @@ python main.py ir-setup --csv_path documents.csv --text_col content --index_type
 @click.option("--output", type=click.Path(), required=True,
               help="Output index path.")
 def ir_setup(csv_path, text_col, index_type, output):
+    ir_setup_command(csv_path, text_col, index_type, output)
     pass
 
 @cli.command(epilog= """Example usage:
@@ -423,6 +447,7 @@ python main.py ir-query --query "ما هو الذكاء الاصطناعي؟" --
 @click.option("--top_k", type=int, default=5, show_default=True,
               help="Number of results to return.")
 def ir_query(query, index_path, top_k):
+    ir_query_command(query, index_path, top_k)
     pass
 
 if __name__ == "__main__":

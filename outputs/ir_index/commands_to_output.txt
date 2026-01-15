@@ -1,0 +1,1 @@
+saved as .faiss, codes from ir out put here
