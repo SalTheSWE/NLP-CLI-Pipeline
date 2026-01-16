@@ -1,1 +1,1 @@
-saved as pkl, codes from embeddings out put here 
+saved as pkl, codes from embeddings out put here tfidf -> outputs\embeddings\tfidf_vectors.pkl

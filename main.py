@@ -81,7 +81,7 @@ python main.py preprocess remove --csv_path data.csv --text_col description --re
 @click.option("--csv_path", type=click.Path(exists=True, dir_okay=False), required=True,
               help="Path to CSV file.")
 @click.option("--text_col", type=str, required=True, help="Text column name.")
-@click.option("--remove", type=str, required=True,
+@click.option("--remove", type=str, required=False,
               help='Comma-separated steps (e.g., "tashkeel,links").')
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output CSV path.")
@@ -146,8 +146,8 @@ python main.py preprocess all --csv_path data.csv --text_col description --langu
 @click.option("--output", type=click.Path(dir_okay=False), required=True,
               help="Output CSV path.")
 @click.pass_context
-def all(ctx, csv_path, text_col, language, output):
-    all_command(ctx, csv_path, text_col, language, output)
+def all(csv_path, text_col, language, output):
+    all_command(csv_path, text_col, language, output)
     pass
 
 
@@ -161,8 +161,8 @@ def embed():
 # TF-IDF Embedding (sklearn)
 python main.py embed tfidf --csv_path cleaned.csv --text_col description --max_features 5000 --output tfidf_vectors.pkl
 """)
-@click.option("--csv_path", type=click.Path(exists=True, dir_okay=False), required=True,
-              help="Path to CSV file.")
+@click.option("--csv_path", type=click.Path(dir_okay=False), required=True)
+
 @click.option("--text_col", type=str, required=True, help="Text column name.")
 @click.option("--max_features", type=int, required=True, help="Max TF-IDF features.")
 @click.option("--output", type=click.Path(dir_okay=False), required=True,

@@ -1,1 +1,4 @@
-saved as png, codes from eda
+saved as png, codes from edaeda distribution (pie) -> outputs\visualizations\distribution_class_pie_20260116_023207.png
+eda histogram (words) -> outputs\visualizations\histogram_description_words_20260116_023221.png
+eda histogram (chars) -> outputs\visualizations\histogram_description_chars_20260116_023235.png
+eda histogram (chars) -> outputs\visualizations\histogram_description_chars_20260116_023648.png
