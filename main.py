@@ -325,7 +325,7 @@ python main.py pipeline --csv_path data.csv --text_col description --label_col c
               help='Training models: "all" or comma-separated list.')
 @click.option("--output", type=click.Path(file_okay=False), required=True,
               help="Output directory.")
-@click.option("--save_model", is_flag=True, default=False, help="Save trained model(s).")
+@click.option("--save_models", is_flag=True, default=False, help="Save trained model(s).")
 @click.option("--save_report", is_flag=True, default=False, help="Save evaluation report.")
 def pipeline(csv_path, text_col, label_col, preprocessing, embedding, training, output, save_model, save_report):
     pipeline_command(csv_path, text_col, label_col, preprocessing, embedding, training, output, save_model, save_report)

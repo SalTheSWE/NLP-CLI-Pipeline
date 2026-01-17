@@ -5,8 +5,9 @@ def remove_command(csv_path, text_col, remove, output):
     df = pd.read_csv(csv_path)
     df[text_col] = df[text_col].apply(clean_arabic_text)
     out_path = save_csv(df, output, bucket="processed_csvs", base_name="normalized", add_timestamp=False)
-    append_command_log("processed_csvs", f"replace -> {out_path}")
+    append_command_log("processed_csvs", f"remove -> {out_path}")
     print(f"Saved CSV: {out_path}")
+    return out_path
 
 def stopwords_command(csv_path, text_col, output, language):
     df = pd.read_csv(csv_path)  
@@ -14,6 +15,7 @@ def stopwords_command(csv_path, text_col, output, language):
     out_path = save_csv(df, output, bucket="processed_csvs", base_name="no_stopwords", add_timestamp=False)
     append_command_log("processed_csvs", f"stopwords -> {out_path}")
     print(f"Saved CSV: {out_path}")
+    return out_path
 
 def replace_command(csv_path, text_col, output):
     df = pd.read_csv(csv_path)
@@ -21,6 +23,7 @@ def replace_command(csv_path, text_col, output):
     out_path = save_csv(df, output, bucket="processed_csvs", base_name="normalized", add_timestamp=False)
     append_command_log("processed_csvs", f"replace -> {out_path}")
     print(f"Saved CSV: {out_path}")
+    return out_path
     
 def all_command(csv_path, text_col, language, output):
     df = pd.read_csv(csv_path)
@@ -30,11 +33,68 @@ def all_command(csv_path, text_col, language, output):
     out_path = save_csv(df, output, bucket="processed_csvs", base_name="final", add_timestamp=False)
     append_command_log("processed_csvs", f"all -> {out_path}")
     print(f"Saved CSV: {out_path}")
+    return out_path
 
 def stem_command(csv_path, text_col, language, stemmer, output):
-    return
+    df = pd.read_csv(csv_path)
+    df[text_col] = df[text_col].fillna("").astype(str)
+
+    language = (language or "ar").lower()
+    if language not in ["ar", "arabic", "auto"]:
+        raise ValueError("stem_command currently supports Arabic only (language=ar/auto).")
+
+    stemmer = (stemmer or "snowball").lower()
+    if stemmer != "snowball":
+        raise ValueError("stem_command supports stemmer='snowball' only.")
+
+    try:
+        from nltk.stem.snowball import SnowballStemmer
+    except Exception as e:
+        raise ImportError("NLTK is required for stemming. Install: pip install nltk") from e
+
+    st = SnowballStemmer("arabic")
+
+    df[text_col] = df[text_col].apply(lambda x: " ".join([st.stem(tok) for tok in x.split()]))
+
+    out_path = save_csv(df, output, bucket="processed_csvs", base_name="stemmed", add_timestamp=False)
+    append_command_log("processed_csvs", f"stem ({stemmer}) -> {out_path}")
+    print(f"Saved CSV: {out_path}")
+    return out_path
 def lemmatize_command(csv_path, text_col, language, output):
-    return
+    df = pd.read_csv(csv_path)
+    df[text_col] = df[text_col].fillna("").astype(str)
+
+    language = (language or "ar").lower()
+    if language not in ["ar", "arabic", "auto"]:
+        raise ValueError("lemmatize_command currently supports Arabic only (language=ar/auto).")
+
+    try:
+        from camel_tools.morphology.database import MorphologyDB
+        from camel_tools.morphology.analyzer import Analyzer
+    except Exception as e:
+        raise ImportError("camel-tools is required for Arabic lemmatization. Install: pip install camel-tools") from e
+
+    db = MorphologyDB.builtin_db()
+    analyzer = Analyzer(db)
+
+    def lemmatize_text(text: str) -> str:
+        out = []
+        for tok in text.split():
+            analyses = analyzer.analyze(tok)
+            if analyses:
+
+                lemma = analyses[0].get("lex") or analyses[0].get("lemma") or tok
+                out.append(lemma)
+            else:
+                out.append(tok)
+        return " ".join(out)
+
+    df[text_col] = df[text_col].apply(lemmatize_text)
+
+    out_path = save_csv(df, output, bucket="processed_csvs", base_name="lemmatized", add_timestamp=False)
+    append_command_log("processed_csvs", f"lemmatize -> {out_path}")
+    print(f"Saved CSV: {out_path}")
+    return out_path
 
 
 

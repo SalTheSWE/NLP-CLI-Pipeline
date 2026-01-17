@@ -9,10 +9,15 @@ import numpy as np
 import ast
 
 from utils.data_handler import save_pickle, save_text, append_command_log
+from commands.preprocessing import remove_command, stopwords_command, replace_command, all_command
+from commands.embedding import tfidfcommand, model2vec_command, word2vec_command, fasttext_command, bert_command, sentence_transformer_command
+from utils.data_handler import append_command_log, save_csv
+
+import pickle
+
 
 
 def train_command(csv_path, input_col, output_col, test_size, dataset, models, save_model, text_col):
-    # Load data (CSV-only here)
     if not csv_path:
         raise ValueError("csv_path is required.")
 
@@ -23,24 +28,32 @@ def train_command(csv_path, input_col, output_col, test_size, dataset, models, s
     if output_col not in df.columns:
         raise ValueError(f"output_col '{output_col}' not found.")
 
-    # Parse embeddings column into a numeric matrix X
     X_list = []
     y_list = []
+
     for i, (x, y) in enumerate(zip(df[input_col].tolist(), df[output_col].tolist())):
         if pd.isna(x):
             continue
+
         if isinstance(x, (list, tuple, np.ndarray)):
             vec = np.array(x, dtype=float)
+
         else:
             s = str(x).strip()
+
+            # FIX: handle "np.float64(0.0)" style values
+            s = s.replace("np.float64(", "").replace(")", "")
+
             try:
                 vec = np.array(ast.literal_eval(s), dtype=float)
             except Exception:
                 s = s.strip("[]")
                 parts = [p for p in s.split(",") if p.strip()]
                 vec = np.array([float(p) for p in parts], dtype=float)
+
         if vec.ndim != 1:
             raise ValueError(f"Embedding at row {i} is not 1D.")
+
         X_list.append(vec)
         y_list.append(str(y))
 
@@ -51,9 +64,10 @@ def train_command(csv_path, input_col, output_col, test_size, dataset, models, s
     y = np.array(y_list)
 
     stratify = y if len(np.unique(y)) > 1 else None
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, stratify=stratify)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=42, stratify=stratify
+    )
 
-    # Decide which models to run (defaults only, no custom params)
     models_norm = [str(m).lower() for m in models]
     if len(models_norm) == 1 and models_norm[0] == "all":
         models_norm = ["knn", "lr", "rf"]
@@ -69,7 +83,6 @@ def train_command(csv_path, input_col, output_col, test_size, dataset, models, s
         else:
             raise ValueError(f"Unknown model '{m}'. Use knn, lr, rf, or all.")
 
-    # Train + report
     report = []
     report.append(f"# Training Report - {pd.Timestamp.now().date()}\n")
     report.append("## Dataset Info")
@@ -86,7 +99,9 @@ def train_command(csv_path, input_col, output_col, test_size, dataset, models, s
         preds = model.predict(X_test)
 
         acc = accuracy_score(y_test, preds)
-        prec, rec, f1, _ = precision_recall_fscore_support(y_test, preds, average="weighted", zero_division=0)
+        prec, rec, f1, _ = precision_recall_fscore_support(
+            y_test, preds, average="weighted", zero_division=0
+        )
         cm = confusion_matrix(y_test, preds)
 
         report.append(f"### {name}")
@@ -110,20 +125,81 @@ def train_command(csv_path, input_col, output_col, test_size, dataset, models, s
             best_name = name
             best_model = model
 
-    report.append(f"## Best Model: {best_name} ⭐\n")
+    report.append(f"## Best Model: {best_name} \n")
     report_md = "\n".join(report)
 
-    # Save report to outputs/reports/training_report_[timestamp].md
     report_path = save_text(report_md, None, bucket="reports", base_name="training_report", ext="md", add_timestamp=True)
     append_command_log("reports", f"train report -> {report_path}")
     print("Saved report:", report_path)
 
-    # Save best model if requested (if user passes just a filename, your data_handler should route it into outputs/models/)
+    model_path = None
     if save_model:
         model_path = save_pickle(best_model, save_model, bucket="models", base_name="best_model", add_timestamp=False)
         append_command_log("models", f"train best_model -> {model_path}")
         print("Saved model:", model_path)
 
-    return
+    return report_path, model_path
+
+
+
+
 def pipeline_command(csv_path, text_col, label_col, preprocessing, embedding, training, output, save_model, save_report):
-    return
+    current_csv = csv_path
+
+    if preprocessing == "all":
+        current_csv = all_command(current_csv, text_col, "auto", output=None)
+    else:
+        steps = [s.strip() for s in preprocessing.split(",") if s.strip()]
+        for step in steps:
+            if step == "remove":
+                current_csv = remove_command(current_csv, text_col, remove="all", output=None)
+            elif step == "stopwords":
+                current_csv = stopwords_command(current_csv, text_col, output=None, language="auto")
+            elif step == "replace":
+                current_csv = replace_command(current_csv, text_col, output=None)
+            else:
+                raise ValueError(f"Unknown preprocessing step: {step}")
+
+    if embedding == "tfidf":
+        emb_path = tfidfcommand(current_csv, text_col, max_features=5000, output=None)
+    elif embedding == "model2vec":
+        emb_path = model2vec_command(current_csv, text_col, output=None)
+    elif embedding == "word2vec":
+        emb_path = word2vec_command(current_csv, text_col, output=None)
+    elif embedding == "fasttext":
+        emb_path = fasttext_command(current_csv, text_col, output=None)
+    elif embedding == "bert":
+        emb_path = bert_command(current_csv, text_col, model="aubmindlab/bert-base-arabertv2", output=None)
+    elif embedding == "sentence-transformer":
+        emb_path = sentence_transformer_command(current_csv, text_col, model="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", output=None)
+    else:
+        raise ValueError(f"Unknown embedding: {embedding}")
+
+    df = pd.read_csv(current_csv)
+    with open(emb_path, "rb") as f:
+        obj = pickle.load(f)
+
+    X = obj["embeddings"] if isinstance(obj, dict) and "embeddings" in obj else obj
+    if hasattr(X, "toarray"):  
+        X = X.toarray()
+
+    df["embedding"] = [list(row) for row in X]
+    train_csv = save_csv(df, None, bucket="processed_csvs", base_name="final_with_embeddings", add_timestamp=True)
+    append_command_log("processed_csvs", f"pipeline embeddings->csv -> {train_csv}")
+    print("Saved:", train_csv)
+
+    model_list = ("all",) if training == "all" else tuple([s.strip() for s in training.split(",") if s.strip()])
+
+    model_out = "best_model.pkl" if save_model else None
+
+    report_path, best_model_path = train_command(train_csv, "embedding", label_col, 0.2, None, model_list, model_out, text_col)
+
+    append_command_log("pipeline", f"pipeline -> csv={train_csv} emb={emb_path} report={report_path} model={best_model_path}")
+    print("Pipeline done.")
+    print("Final CSV:", train_csv)
+    print("Embeddings:", emb_path)
+    print("Report:", report_path)
+    if best_model_path:
+        print("Best model:", best_model_path)
+
+    return {"final_csv": train_csv, "embeddings": emb_path, "report": report_path, "model": best_model_path}
