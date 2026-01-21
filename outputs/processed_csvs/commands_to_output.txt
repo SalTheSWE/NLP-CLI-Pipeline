@@ -9,3 +9,9 @@ remove -> outputs\processed_csvs\normalized.csv
 stopwords -> outputs\processed_csvs\no_stopwords.csv
 replace -> outputs\processed_csvs\normalized.csv
 pipeline embeddings->csv -> outputs\processed_csvs\final_with_embeddings_20260117_173714.csv
+remove -> outputs\processed_csvs\cleaned.csv
+remove -> outputs\processed_csvs\partial_clean.csv
+stopwords -> outputs\processed_csvs\cleaned.csv
+stopwords -> outputs\processed_csvs\cleaned.csv
+stopwords -> outputs\processed_csvs\cleaned.csv
+remove-outliers (iqr) 80->76 -> outputs\processed_csvs\clean_data.csv

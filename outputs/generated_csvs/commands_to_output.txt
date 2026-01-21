@@ -1,1 +1,2 @@
-saved as csv, codes from generate output here 
+saved as csv, codes from generate output here generate (gemini) -> outputs\generated_csvs\synthetic.csv
+generate (local) -> outputs\generated_csvs\synthetic.csv
